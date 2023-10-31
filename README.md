@@ -1,70 +1,36 @@
-# Getting Started with Create React App
+# AssemblyAI Real-Time Microphone Transcription-React Example
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+This open-source repo provided by AssemblyAI displays how to use our Real-time API with the React framework.
 
-## Available Scripts
+In this app, we grab an audio stream from the user's computer and then send that over a WebSocket to AssemblyAI for Real-time transcription. Once AssemblyAI begins transcribing, the app displays the text in the browser. This is accomplished using Express for our backend and React for our frontend.
 
-In the project directory, you can run:
+## How To Install and Run the Project
 
-### `npm start`
+##### ❗Important❗
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+- Before running this app, you need to upgrade your AssemblyAI account. The real-time API is only available to upgraded accounts at this time.
+- Running the app before upgrading will cause an **error with a 402 status code.** ⚠️
+- To upgrade your account you need to add a card. You can do that in your dashboard [here](https://www.assemblyai.com/app/)!
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+##### Instructions
 
-### `npm test`
+1. Clone the repo to your local machine.
+2. Open a terminal in the main directory housing the project. In this case `real-time-react`.
+3. Run `npm install` to ensure all dependencies are installed.
+4. Add a `.env` file to the `server` folder. Add your AssemblyAI key to the `.env` file. You can find your API key on the "Account" page in your dashboard [here](https://www.assemblyai.com/app/account). Copy and paste it into the `.env` file replacing "YOUR-PERSONAL-API-KEY" with your own key:
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+```
+AAI_KEY="YOUR-PERSONAL-API-KEY"
+```
 
-### `npm run build`
+5. Start the app with the command `npm start`. The app will run on port 3000. Open `http://localhost:3000/` in your browser and click "Record" to receive live transcription.
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## Further Documentation
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+- [AssemblyAI Real-Time Documention](https://www.assemblyai.com/docs/Guides/real-time_streaming_transcription)
+- [recordrtc](https://www.npmjs.com/package/recordrtc)
+- [Express](https://expressjs.com/)
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## Contact Us
 
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
-
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+If you have any questions, please feel free to reach out to our Support team - support@assemblyai.com!
