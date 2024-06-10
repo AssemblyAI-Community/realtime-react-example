@@ -20,14 +20,14 @@ In this app, we grab an audio stream from the user's computer and then send that
 4. Add a `.env` file to the `server` folder. Add your AssemblyAI key to the `.env` file. You can find your API key on the "Account" page in your dashboard [here](https://www.assemblyai.com/app/account). Copy and paste it into the `.env` file replacing "YOUR-PERSONAL-API-KEY" with your own key:
 
 ```
-AAI_KEY="YOUR-PERSONAL-API-KEY"
+ASSEMBLYAI_API_KEY="YOUR-PERSONAL-API-KEY"
 ```
 
 5. Start the app with the command `npm start`. The app will run on port 3000. Open `http://localhost:3000/` in your browser and click "Record" to receive live transcription.
 
 ## Further Documentation
 
-- [AssemblyAI Real-Time Documention](https://www.assemblyai.com/docs/Guides/real-time_streaming_transcription)
+- [AssemblyAI Real-Time Documentation](https://www.assemblyai.com/docs/speech-to-text/streaming)
 - [recordrtc](https://www.npmjs.com/package/recordrtc)
 - [Express](https://expressjs.com/)
 

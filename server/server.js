@@ -1,22 +1,19 @@
 const express = require('express');
-const axios = require('axios');
 const cors = require('cors');
-require('dotenv').config()
+const { AssemblyAI } = require('assemblyai');
+require('dotenv').config();
 
+const aaiClient = new AssemblyAI({ apiKey: process.env.ASSEMBLYAI_API_KEY });
 const app = express();
 app.use(express.json());
 app.use(cors());
 
 app.get('/token', async (req, res) => {
   try {
-    const response = await axios.post('https://api.assemblyai.com/v2/realtime/token', 
-      { expires_in: 3600 }, 
-      { headers: { authorization: `${process.env.AAI_KEY}` } }); 
-    const { data } = response; 
-    res.json(data); 
+    const token = await aaiClient.realtime.createTemporaryToken({ expires_in: 3600 });
+    res.json({ token });
   } catch (error) {
-    const {response: {status, data}} = error;    
-    res.status(status).json(data);
+    res.status(500).json({ error: error.message });
   }
 });
 
