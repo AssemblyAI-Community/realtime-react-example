@@ -1,116 +1,138 @@
 import './App.css';
 import { useRef, useState } from 'react';
-import { RealtimeTranscriber } from 'assemblyai/streaming';
-import * as RecordRTC from 'recordrtc';
 
-function App() {
-  /** @type {React.MutableRefObject<RealtimeTranscriber>} */
-  const realtimeTranscriber = useRef(null)
-  /** @type {React.MutableRefObject<RecordRTC>} */
-  const recorder = useRef(null)
-  const [isRecording, setIsRecording] = useState(false)
-  const [transcript, setTranscript] = useState('')
+export default function Home() {
+  const socket = useRef(null);
+  const audioContext = useRef(null);
+  const mediaStream = useRef(null);
+  const scriptProcessor = useRef(null);
+
+  const [isRecording, setIsRecording] = useState(false);
+  const [transcripts, setTranscripts] = useState({}); 
 
   const getToken = async () => {
     const response = await fetch('http://localhost:8000/token');
     const data = await response.json();
 
-    if (data.error) {
-      alert(data.error)
+    if (!data || !data.token) {
+      alert('Failed to get token');
+      return null;
     }
 
     return data.token;
   };
 
-  const startTranscription = async () => {
-    realtimeTranscriber.current = new RealtimeTranscriber({
-      token: await getToken(),
-      sampleRate: 16_000,
-    });
+  const startRecording = async () => {
+    const token = await getToken();
+    if (!token) return;
 
-    const texts = {};
-    realtimeTranscriber.current.on('transcript', transcript => {
-      let msg = '';
-      texts[transcript.audio_start] = transcript.text;
-      const keys = Object.keys(texts);
-      keys.sort((a, b) => a - b);
-      for (const key of keys) {
-        if (texts[key]) {
-          msg += ` ${texts[key]}`
-          console.log(msg)
+    const wsUrl = `wss://streaming.assemblyai.com/v3/ws?sample_rate=16000&formatted_finals=true&token=${token}`;
+    socket.current = new WebSocket(wsUrl);
+
+    const turns = {}; // for storing transcript updates per turn
+
+    socket.current.onopen = async () => {
+      console.log('WebSocket connection established');
+      console.log('Connected to:', wsUrl);
+      setIsRecording(true);
+
+      mediaStream.current = await navigator.mediaDevices.getUserMedia({ audio: true });
+      audioContext.current = new AudioContext({ sampleRate: 16000 });
+
+      const source = audioContext.current.createMediaStreamSource(mediaStream.current);
+      scriptProcessor.current = audioContext.current.createScriptProcessor(4096, 1, 1);
+
+      source.connect(scriptProcessor.current);
+      scriptProcessor.current.connect(audioContext.current.destination);
+
+      scriptProcessor.current.onaudioprocess = (event) => {
+        if (!socket.current || socket.current.readyState !== WebSocket.OPEN) return;
+
+        const input = event.inputBuffer.getChannelData(0);
+        const buffer = new Int16Array(input.length);
+        for (let i = 0; i < input.length; i++) {
+          buffer[i] = Math.max(-1, Math.min(1, input[i])) * 0x7fff;
         }
+        socket.current.send(buffer.buffer);
+      };
+    };
+
+    socket.current.onmessage = (event) => {
+      console.log('Received message:', event.data);
+      const message = JSON.parse(event.data);
+
+      if (message.type === 'Turn') {
+        const { turn_order, transcript } = message;
+        turns[turn_order] = transcript;
+
+        setTranscripts({ ...turns });
       }
-      setTranscript(msg)
-    });
+    };
 
-    realtimeTranscriber.current.on('error', event => {
-      console.error(event);
-      realtimeTranscriber.current.close();
-      realtimeTranscriber.current = null;
-    });
+    socket.current.onerror = (err) => {
+      console.error('WebSocket error:', err);
+      stopRecording();
+    };
 
-    realtimeTranscriber.current.on('close', (code, reason) => {
-      console.log(`Connection closed: ${code} ${reason}`);
-      realtimeTranscriber.current = null;
-    });
+    socket.current.onclose = () => {
+      console.log('WebSocket closed');
+      socket.current = null;
+    };
+  };
 
-    await realtimeTranscriber.current.connect();
+  const stopRecording = () => {
+    setIsRecording(false);
 
-    navigator.mediaDevices.getUserMedia({ audio: true })
-      .then((stream) => {
-        recorder.current = new RecordRTC(stream, {
-          type: 'audio',
-          mimeType: 'audio/webm;codecs=pcm',
-          recorderType: RecordRTC.StereoAudioRecorder,
-          timeSlice: 250,
-          desiredSampRate: 16000,
-          numberOfAudioChannels: 1,
-          bufferSize: 4096,
-          audioBitsPerSecond: 128000,
-          ondataavailable: async (blob) => {
-            if(!realtimeTranscriber.current) return;
-            const buffer = await blob.arrayBuffer();
-            realtimeTranscriber.current.sendAudio(buffer);
-          },
-        });
-        recorder.current.startRecording();
-      })
-      .catch((err) => console.error(err));
+    if (scriptProcessor.current) {
+      scriptProcessor.current.disconnect();
+      scriptProcessor.current = null;
+    }
 
-    setIsRecording(true)
-  }
+    if (audioContext.current) {
+      audioContext.current.close();
+      audioContext.current = null;
+    }
 
-  const endTranscription = async (event) => {
-    event.preventDefault();
-    setIsRecording(false)
+    if (mediaStream.current) {
+      mediaStream.current.getTracks().forEach(track => track.stop());
+      mediaStream.current = null;
+    }
 
-    await realtimeTranscriber.current.close();
-    realtimeTranscriber.current = null;
+    if (socket.current) {
+      socket.current.send(JSON.stringify({ type: 'Terminate' }));
+      socket.current.close();
+      socket.current = null;
+    }
+  };
 
-    recorder.current.pauseRecording();
-    recorder.current = null;
-  }
-
+  const orderedTranscript = Object.keys(transcripts)
+    .sort((a, b) => Number(a) - Number(b))
+    .map((k) => transcripts[k])
+    .join(' ');
 
   return (
     <div className="App">
       <header>
-        <h1 className="header__title">Real-Time Transcription</h1>
-        <p className="header__sub-title">Try AssemblyAI's new real-time transcription endpoint!</p>
+        <h1 className="header__title">Real-Time Transcription (v3)</h1>
+        <p className="header__sub-title">
+          Powered by AssemblyAI's latest real-time model
+        </p>
       </header>
       <div className="real-time-interface">
-        <p id="real-time-title" className="real-time-interface__title">Click start to begin recording!</p>
+        <p className="real-time-interface__title">Click start to begin recording!</p>
         {isRecording ? (
-          <button className="real-time-interface__button" onClick={endTranscription}>Stop recording</button>
+          <button className="real-time-interface__button" onClick={stopRecording}>
+            Stop recording
+          </button>
         ) : (
-          <button className="real-time-interface__button" onClick={startTranscription}>Record</button>
+          <button className="real-time-interface__button" onClick={startRecording}>
+            Record
+          </button>
         )}
       </div>
       <div className="real-time-interface__message">
-        {transcript}
+        <p><strong>Transcript:</strong> {orderedTranscript}</p>
       </div>
     </div>
   );
 }
-
-export default App;

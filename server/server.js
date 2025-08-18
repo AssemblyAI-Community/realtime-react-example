@@ -1,19 +1,27 @@
 const express = require('express');
 const cors = require('cors');
-const { AssemblyAI } = require('assemblyai');
+const axios = require('axios');
 require('dotenv').config();
 
-const aaiClient = new AssemblyAI({ apiKey: process.env.ASSEMBLYAI_API_KEY });
 const app = express();
 app.use(express.json());
 app.use(cors());
 
 app.get('/token', async (req, res) => {
+  const expiresInSeconds = 500;
+  const url = `https://streaming.assemblyai.com/v3/token?expires_in_seconds=${expiresInSeconds}`;
+
   try {
-    const token = await aaiClient.realtime.createTemporaryToken({ expires_in: 3600 });
-    res.json({ token });
+    const response = await axios.get(url, {
+      headers: {
+        Authorization: process.env.ASSEMBLYAI_API_KEY,
+      },
+    });
+
+    res.json({ token: response.data.token });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error("Error generating temp token:", error.response?.data || error.message);
+    res.status(500).json({ error: "Failed to fetch token" });
   }
 });
 
